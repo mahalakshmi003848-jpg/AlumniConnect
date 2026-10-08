@@ -1,143 +1,186 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Mail, Lock, LogIn, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import Navbar from "../components/Navbar";
+import { supabase } from "../supabase";
 import "./Login.css";
 
 function Login() {
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e) => {
     e.preventDefault();
+
+    setError("");
+
+    if (!email || !password) {
+      setError("Please enter your email and password.");
+      return;
+    }
+
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
     navigate("/dashboard");
   };
 
   return (
-    <div className="login-page">
+    <div className="auth-page">
       <Navbar />
 
-      <main className="login-container">
-        <div className="login-card">
-          <div className="login-header">
-            <div className="login-icon">
-              <ShieldCheck size={28} />
+      <main className="auth-shell">
+        <section className="auth-visual">
+          <div className="auth-visual-top">
+            <span>ALUMNICONNECT</span>
+            <span>01 / 02</span>
+          </div>
+
+          <div className="auth-visual-content">
+            <div className="auth-eyebrow">
+              <span className="auth-dot"></span>
+              YOUR NETWORK IS WAITING
             </div>
 
-            <span className="login-eyebrow">WELCOME BACK</span>
-
-            <h1>Welcome back to AlumniConnect</h1>
+            <h1>
+              One network.
+              <br />
+              <em>Many possibilities.</em>
+            </h1>
 
             <p>
-              Sign in to reconnect with your alumni network, discover
-              opportunities, and grow together.
+              Connect with alumni, discover opportunities, find mentors and
+              stay connected to the community that shaped your journey.
             </p>
+
+            <div className="auth-network">
+              <div className="network-line line-one"></div>
+              <div className="network-line line-two"></div>
+              <div className="network-line line-three"></div>
+
+              <div className="network-node node-main">A</div>
+              <div className="network-node node-one">R</div>
+              <div className="network-node node-two">P</div>
+              <div className="network-node node-three">K</div>
+              <div className="network-node node-four">S</div>
+            </div>
           </div>
 
-          <form className="login-form" onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="email">Email Address</label>
+          <div className="auth-visual-footer">
+            <span>
+              <Users size={16} />
+              2,500+ alumni
+            </span>
 
-              <div className="input-wrapper">
-                <Mail size={19} />
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <div className="password-label">
-                <label htmlFor="password">Password</label>
-
-                <button
-                  type="button"
-                  className="forgot-password"
-                  onClick={() =>
-                    alert("Password recovery will be connected to Supabase.")
-                  }
-                >
-                  Forgot password?
-                </button>
-              </div>
-
-              <div className="input-wrapper">
-                <Lock size={19} />
-
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  required
-                />
-              </div>
-            </div>
-
-            <label className="remember-row">
-              <input type="checkbox" />
-              <span>Remember me</span>
-            </label>
-
-            <button type="submit" className="login-submit">
-              <LogIn size={19} />
-              Sign In
-            </button>
-          </form>
-
-          <div className="login-divider">
-            <span>OR</span>
+            <span>
+              <ShieldCheck size={16} />
+              Verified community
+            </span>
           </div>
+        </section>
 
-          <div className="login-register">
-            <p>Don't have an account?</p>
+        <section className="auth-form-side">
+          <div className="auth-form-wrap">
+            <div className="auth-form-heading">
+              <span>WELCOME BACK</span>
+              <h2>Sign in to your network.</h2>
+              <p>
+                Access your profile, connections and career opportunities.
+              </p>
+            </div>
 
-            <Link to="/register">
-              Create your AlumniConnect account
+            <form onSubmit={handleLogin} className="auth-form">
+              {error && <div className="auth-error">{error}</div>}
+
+              <div className="field-group">
+                <label>Email address</label>
+
+                <div className="field-input">
+                  <Mail size={18} />
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                  />
+                </div>
+              </div>
+
+              <div className="field-group">
+                <div className="field-label-row">
+                  <label>Password</label>
+                  <button
+                    type="button"
+                    className="forgot-button"
+                    onClick={() =>
+                      setError(
+                        "Password reset can be added after the main authentication flow."
+                      )
+                    }
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+
+                <div className="field-input">
+                  <LockKeyhole size={18} />
+                  <input
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="auth-submit"
+                disabled={loading}
+              >
+                {loading ? "Signing in..." : "Sign in"}
+                {!loading && <ArrowRight size={18} />}
+              </button>
+            </form>
+
+            <div className="auth-divider">
+              <span>NEW TO ALUMNICONNECT?</span>
+            </div>
+
+            <Link to="/register" className="auth-register-link">
+              Create your account
+              <ArrowRight size={17} />
             </Link>
-          </div>
 
-          <Link to="/" className="back-home">
-            <ArrowLeft size={17} />
-            Back to Home
-          </Link>
-        </div>
-
-        <div className="login-side">
-          <div className="side-content">
-            <span>YOUR NETWORK AWAITS</span>
-
-            <h2>
-              One connection
-              <br />
-              can change your
-              <br />
-              <strong>next opportunity.</strong>
-            </h2>
-
-            <p>
-              Connect with alumni, discover mentors, explore career
-              opportunities, and stay involved with your institution.
+            <p className="auth-note">
+              By continuing, you agree to use AlumniConnect responsibly and
+              keep your profile information accurate.
             </p>
-
-            <div className="side-stats">
-              <div>
-                <strong>10K+</strong>
-                <span>Alumni</span>
-              </div>
-
-              <div>
-                <strong>250+</strong>
-                <span>Mentors</span>
-              </div>
-
-              <div>
-                <strong>500+</strong>
-                <span>Opportunities</span>
-              </div>
-            </div>
           </div>
-        </div>
+        </section>
       </main>
     </div>
   );

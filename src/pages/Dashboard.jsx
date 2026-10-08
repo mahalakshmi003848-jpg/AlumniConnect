@@ -1,329 +1,305 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  Users,
+  ArrowRight,
   Briefcase,
   CalendarDays,
   Handshake,
-  ArrowRight,
-  Search,
+  LogOut,
   MapPin,
-  Clock3,
-  Building2,
-  TrendingUp,
-  Bell,
-  ChevronRight,
-  Sparkles,
+  Pencil,
+  ShieldCheck,
+  UserRound,
+  Users,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
+import { supabase } from "../supabase";
 import "./Dashboard.css";
 
 function Dashboard() {
-  const stats = [
-    {
-      label: "Alumni Network",
-      value: "10,248",
-      change: "+12.4%",
-      icon: <Users size={21} />,
-    },
-    {
-      label: "Career Opportunities",
-      value: "524",
-      change: "+8.7%",
-      icon: <Briefcase size={21} />,
-    },
-    {
-      label: "Active Mentors",
-      value: "286",
-      change: "+15.2%",
-      icon: <Handshake size={21} />,
-    },
-    {
-      label: "Upcoming Events",
-      value: "18",
-      change: "+4.1%",
-      icon: <CalendarDays size={21} />,
-    },
-  ];
+  const navigate = useNavigate();
 
-  const opportunities = [
-    {
-      company: "Microsoft",
-      role: "Software Engineer",
-      location: "Bengaluru, India",
-      type: "Full Time",
-      posted: "2 days ago",
-    },
-    {
-      company: "Deloitte",
-      role: "Data Analyst Intern",
-      location: "Hyderabad, India",
-      type: "Internship",
-      posted: "4 days ago",
-    },
-    {
-      company: "Google",
-      role: "ML Research Intern",
-      location: "Bengaluru, India",
-      type: "Internship",
-      posted: "1 week ago",
-    },
-  ];
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const alumni = [
-    {
-      name: "Ananya Sharma",
-      role: "Senior Software Engineer",
-      company: "Microsoft",
-      batch: "2019",
-      initials: "AS",
-    },
-    {
-      name: "Rahul Menon",
-      role: "Product Manager",
-      company: "Amazon",
-      batch: "2018",
-      initials: "RM",
-    },
-    {
-      name: "Priya Nair",
-      role: "Data Scientist",
-      company: "Google",
-      batch: "2020",
-      initials: "PN",
-    },
-  ];
+  useEffect(() => {
+    loadProfile();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      loadProfile();
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const loadProfile = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    setUser(user);
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    if (!error) {
+      setProfile(data);
+    }
+
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
+
+  if (loading) {
+    return (
+      <div className="dashboard-loading">
+        <div className="loading-dot"></div>
+        Loading your network...
+      </div>
+    );
+  }
+
+  const displayName =
+    profile?.full_name ||
+    user?.user_metadata?.full_name ||
+    "AlumniConnect Member";
+
+  const firstName = displayName.split(" ")[0];
 
   return (
     <div className="dashboard-page">
       <Navbar />
 
-      <main className="dashboard-container">
-        {/* Welcome Header */}
-        <section className="dashboard-welcome">
+      <main className="dashboard-main">
+        <section className="dashboard-hero">
           <div>
             <span className="dashboard-eyebrow">
-              <Sparkles size={14} />
-              ALUMNICONNECT DASHBOARD
+              <span></span>
+              YOUR ALUMNICONNECT
             </span>
 
             <h1>
-              Welcome back, <span>Maha!</span>
+              Welcome back,
+              <br />
+              <em>{firstName}.</em>
             </h1>
 
             <p>
-              Stay connected, discover opportunities, and grow with your
-              alumni community.
+              Your professional network, opportunities and connections —
+              all in one place.
             </p>
           </div>
 
-          <div className="dashboard-header-actions">
-            <button className="notification-btn">
-              <Bell size={19} />
-              <span></span>
-            </button>
-
-            <Link to="/alumni" className="dashboard-profile">
-              <div className="profile-avatar">MG</div>
-
-              <div>
-                <strong>Maha Gopinath</strong>
-                <small>CSE • AIML</small>
-              </div>
-
-              <ChevronRight size={17} />
-            </Link>
-          </div>
+          <button className="dashboard-logout" onClick={handleLogout}>
+            <LogOut size={16} />
+            Sign out
+          </button>
         </section>
 
-        {/* Stats */}
-        <section className="dashboard-stats">
-          {stats.map((stat) => (
-            <div className="dashboard-stat-card" key={stat.label}>
-              <div className="stat-top">
-                <div className="stat-icon">{stat.icon}</div>
+        <section className="dashboard-profile-strip">
+          <div className="dashboard-avatar">
+            {displayName.charAt(0).toUpperCase()}
+          </div>
 
-                <span className="stat-growth">
-                  <TrendingUp size={13} />
-                  {stat.change}
+          <div className="dashboard-profile-info">
+            <div className="dashboard-name-row">
+              <h2>{displayName}</h2>
+
+              {profile?.verified && (
+                <span className="verified-badge">
+                  <ShieldCheck size={14} />
+                  Verified
                 </span>
-              </div>
-
-              <strong>{stat.value}</strong>
-              <span>{stat.label}</span>
-            </div>
-          ))}
-        </section>
-
-        {/* Main Grid */}
-        <section className="dashboard-main-grid">
-          {/* Opportunities */}
-          <div className="dashboard-panel opportunities-panel">
-            <div className="panel-heading">
-              <div>
-                <span>CAREER</span>
-                <h2>Latest Opportunities</h2>
-              </div>
-
-              <Link to="/jobs">
-                View all
-                <ArrowRight size={16} />
-              </Link>
+              )}
             </div>
 
-            <div className="opportunity-list">
-              {opportunities.map((job) => (
-                <div className="opportunity-item" key={job.role}>
-                  <div className="company-logo">
-                    {job.company.charAt(0)}
-                  </div>
+            <p>
+              {profile?.job_title || "AlumniConnect Member"}
+              {profile?.company ? ` · ${profile.company}` : ""}
+            </p>
 
-                  <div className="opportunity-info">
-                    <strong>{job.role}</strong>
-                    <span>
-                      <Building2 size={13} />
-                      {job.company}
-                    </span>
+            <div className="dashboard-meta">
+              {profile?.location && (
+                <span>
+                  <MapPin size={14} />
+                  {profile.location}
+                </span>
+              )}
 
-                    <small>
-                      <MapPin size={12} />
-                      {job.location}
-                    </small>
-                  </div>
+              {profile?.graduation_year && (
+                <span>
+                  <Users size={14} />
+                  Class of {profile.graduation_year}
+                </span>
+              )}
 
-                  <div className="opportunity-meta">
-                    <span>{job.type}</span>
-                    <small>
-                      <Clock3 size={12} />
-                      {job.posted}
-                    </small>
-                  </div>
-                </div>
-              ))}
+              {profile?.degree && (
+                <span>
+                  <UserRound size={14} />
+                  {profile.degree}
+                  {profile.branch ? ` · ${profile.branch}` : ""}
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="dashboard-panel quick-panel">
-            <div className="panel-heading">
+          <Link to="/alumni" className="edit-profile">
+            <Pencil size={15} />
+            View network
+          </Link>
+        </section>
+
+        <section className="dashboard-stats">
+          <div>
+            <span>NETWORK</span>
+            <strong>2,500+</strong>
+            <p>Alumni connected</p>
+          </div>
+
+          <div>
+            <span>OPPORTUNITIES</span>
+            <strong>120+</strong>
+            <p>Active opportunities</p>
+          </div>
+
+          <div>
+            <span>MENTORSHIP</span>
+            <strong>86</strong>
+            <p>Mentors available</p>
+          </div>
+
+          <div>
+            <span>EVENTS</span>
+            <strong>24</strong>
+            <p>Upcoming events</p>
+          </div>
+        </section>
+
+        <section className="dashboard-grid">
+          <div className="dashboard-section">
+            <div className="dashboard-section-heading">
               <div>
                 <span>EXPLORE</span>
-                <h2>Quick Actions</h2>
+                <h2>Make your network work for you.</h2>
               </div>
             </div>
 
-            <div className="quick-actions">
-              <Link to="/alumni" className="quick-action">
-                <div className="quick-icon blue">
+            <div className="dashboard-actions">
+              <Link to="/alumni" className="dashboard-action">
+                <div className="action-icon">
                   <Users size={21} />
                 </div>
 
                 <div>
-                  <strong>Find Alumni</strong>
-                  <span>Explore your alumni network</span>
+                  <h3>Explore Alumni</h3>
+                  <p>Find alumni by batch, industry and skills.</p>
                 </div>
 
-                <ArrowRight size={17} />
+                <ArrowRight size={18} />
               </Link>
 
-              <Link to="/mentorship" className="quick-action">
-                <div className="quick-icon purple">
+              <Link to="/mentorship" className="dashboard-action">
+                <div className="action-icon">
                   <Handshake size={21} />
                 </div>
 
                 <div>
-                  <strong>Find a Mentor</strong>
-                  <span>Learn from experienced alumni</span>
+                  <h3>Find a Mentor</h3>
+                  <p>Connect with experienced alumni.</p>
                 </div>
 
-                <ArrowRight size={17} />
+                <ArrowRight size={18} />
               </Link>
 
-              <Link to="/jobs" className="quick-action">
-                <div className="quick-icon green">
+              <Link to="/jobs" className="dashboard-action">
+                <div className="action-icon">
                   <Briefcase size={21} />
                 </div>
 
                 <div>
-                  <strong>Explore Jobs</strong>
-                  <span>Discover career opportunities</span>
+                  <h3>Career Opportunities</h3>
+                  <p>Discover jobs, internships and referrals.</p>
                 </div>
 
-                <ArrowRight size={17} />
+                <ArrowRight size={18} />
               </Link>
 
-              <Link to="/events" className="quick-action">
-                <div className="quick-icon orange">
+              <Link to="/events" className="dashboard-action">
+                <div className="action-icon">
                   <CalendarDays size={21} />
                 </div>
 
                 <div>
-                  <strong>Upcoming Events</strong>
-                  <span>Connect at alumni events</span>
+                  <h3>Upcoming Events</h3>
+                  <p>Meet the community beyond the screen.</p>
                 </div>
 
-                <ArrowRight size={17} />
+                <ArrowRight size={18} />
               </Link>
             </div>
           </div>
-        </section>
 
-        {/* Alumni Section */}
-        <section className="dashboard-panel alumni-panel">
-          <div className="panel-heading">
-            <div>
-              <span>NETWORK</span>
-              <h2>Alumni You May Know</h2>
+          <aside className="dashboard-side-card">
+            <span>YOUR PROFILE</span>
+
+            <h3>Keep your profile current.</h3>
+
+            <p>
+              Complete your professional profile so alumni and students can
+              discover your experience and expertise.
+            </p>
+
+            <div className="profile-progress">
+              <div>
+                <span>Profile strength</span>
+                <strong>65%</strong>
+              </div>
+
+              <div className="progress-track">
+                <div className="progress-fill"></div>
+              </div>
             </div>
 
-            <Link to="/alumni">
-              Explore directory
+            <button
+              onClick={() =>
+                alert("Profile editing will be connected next.")
+              }
+            >
+              Complete profile
               <ArrowRight size={16} />
-            </Link>
-          </div>
-
-          <div className="alumni-cards">
-            {alumni.map((person) => (
-              <div className="alumni-card" key={person.name}>
-                <div className="alumni-avatar">{person.initials}</div>
-
-                <div className="alumni-info">
-                  <strong>{person.name}</strong>
-                  <span>{person.role}</span>
-                  <small>
-                    {person.company} • Batch {person.batch}
-                  </small>
-                </div>
-
-                <Link
-                  to="/alumni"
-                  className="connect-btn"
-                >
-                  Connect
-                </Link>
-              </div>
-            ))}
-          </div>
+            </button>
+          </aside>
         </section>
 
-        {/* Search CTA */}
-        <section className="dashboard-search-banner">
-          <div className="search-banner-icon">
-            <Search size={25} />
-          </div>
-
+        <section className="dashboard-bottom">
           <div>
-            <span>LOOKING FOR SOMEONE?</span>
-            <h2>Find the right connection.</h2>
-            <p>
-              Search alumni by name, batch, company, location, industry,
-              or skills.
-            </p>
+            <span>ALUMNICONNECT</span>
+            <h2>
+              Stay connected.
+              <br />
+              Keep growing.
+            </h2>
           </div>
 
-          <Link to="/alumni" className="search-banner-btn">
-            Search Alumni
-            <ArrowRight size={17} />
-          </Link>
+          <p>
+            The strongest opportunities often begin with a conversation.
+            Explore the network and make your next connection count.
+          </p>
         </section>
       </main>
     </div>
